@@ -1,0 +1,6 @@
+{
+  "name": "Teacher Assistant",
+  "description": "Aplikasi asisten guru terintegrasi untuk mengelola data guru, kelas, siswa, jadwal pelajaran, absensi, materi, jurnal mengajar, nilai, dan rekap laporan sekolah.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
