@@ -1,20 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, User, Users, Compass, Clock, RotateCcw } from 'lucide-react';
+import { ShieldCheck, Clock, User, LogOut } from 'lucide-react';
 import { db } from '../utils/storage';
 
 interface TopbarProps {
-  onUserChanged: () => void;
+  onUserChanged?: () => void;
+  onLogout?: () => void;
   activeTab: string;
 }
 
-export default function Topbar({ onUserChanged, activeTab }: TopbarProps) {
+export default function Topbar({ activeTab, onLogout }: TopbarProps) {
   const [time, setTime] = useState<string>('');
   const [dateStr, setDateStr] = useState<string>('');
-  const [showUserDropdown, setShowUserDropdown] = useState<boolean>(false);
 
-  // Load current profiles & user
-  const profiles = db.getProfiles();
-  const currentUserId = db.getCurrentUserId();
+  // Load current profile & user
   const currentUser = db.getCurrentUser();
   const roles = db.getRoles();
   const currentRole = roles.find(r => r.id === currentUser.roleId);
@@ -37,13 +35,6 @@ export default function Topbar({ onUserChanged, activeTab }: TopbarProps) {
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
   }, []);
-
-  const handleSwitchUser = (userId: string) => {
-    db.setCurrentUserId(userId);
-    db.logActivity("Switch User", `Berhasil berganti ke profil ${db.getProfiles().find(p => p.id === userId)?.name}`);
-    setShowUserDropdown(false);
-    onUserChanged();
-  };
 
   const getPageTitle = () => {
     switch (activeTab) {
@@ -93,7 +84,7 @@ export default function Topbar({ onUserChanged, activeTab }: TopbarProps) {
         </span>
       </div>
 
-      {/* Right block with Simulator Switcher & Info */}
+      {/* Right block with Clock and Active User Badge */}
       <div className="flex items-center gap-4">
         {/* Real-time Clock */}
         <div className="hidden md:flex items-center gap-2 text-slate-500 text-[11px] font-semibold font-mono bg-slate-50 border border-slate-200/60 px-2.5 py-1.5 rounded">
@@ -101,65 +92,30 @@ export default function Topbar({ onUserChanged, activeTab }: TopbarProps) {
           <span>{dateStr} • {time} WIB</span>
         </div>
 
-        {/* Dynamic Simulator Dropdown */}
-        <div className="relative">
-          <button
-            onClick={() => setShowUserDropdown(!showUserDropdown)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded border border-amber-200/80 bg-amber-50 hover:bg-amber-100 text-amber-800 text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm"
-            id="role-switcher-btn"
-          >
-            <Compass className="h-3.5 w-3.5 animate-spin-slow text-amber-600" />
-            <span className="hidden sm:inline">Simulasi:</span>
-            <span className="font-extrabold">{currentUser.name.split(',')[0]}</span>
-          </button>
-
-          {showUserDropdown && (
-            <div className="absolute right-0 mt-2 w-80 bg-white rounded shadow-lg border border-slate-200 py-1.5 z-50 animate-fade-in">
-              <div className="px-3.5 py-2 border-b border-slate-100">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">
-                  Simulator Multi-Role
-                </p>
-                <p className="text-[10px] text-slate-500 mt-0.5 leading-relaxed">
-                  Ganti profil untuk menguji tampilan menu & izin modifikasi RLS.
-                </p>
-              </div>
-
-              <div className="p-1 space-y-0.5">
-                {profiles.map(profile => {
-                  const role = roles.find(r => r.id === profile.roleId);
-                  const isSelected = profile.id === currentUserId;
-                  return (
-                    <button
-                      key={profile.id}
-                      onClick={() => handleSwitchUser(profile.id)}
-                      className={`w-full text-left p-2 rounded transition-all flex items-center gap-2.5 ${
-                        isSelected
-                          ? 'bg-blue-50/70 border-l-4 border-blue-500'
-                          : 'hover:bg-slate-50'
-                      }`}
-                    >
-                      <img
-                        src={profile.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${profile.id}`}
-                        alt="Avatar"
-                        className="w-7 h-7 rounded-full bg-slate-100 flex-shrink-0"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-slate-800 truncate">{profile.name}</p>
-                        <p className="text-[9px] text-slate-400 font-mono truncate">
-                          {role?.name} {profile.nip ? `• NIP: ${profile.nip}` : ''}
-                        </p>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="px-4 py-1.5 bg-slate-50 border-t border-slate-100 rounded-b text-[9px] text-slate-400 font-mono text-center flex items-center justify-center gap-1">
-                <RotateCcw className="h-3 w-3" />
-                Semua perubahan data disimpan di LocalStorage.
-              </div>
+        {/* User Profile Badge & Logout Button */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5 px-3 py-1.5 rounded border border-slate-200/80 bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs">
+            <img
+              src={currentUser.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${currentUser.id}`}
+              alt="Avatar"
+              className="w-6 h-6 rounded-full bg-slate-200 flex-shrink-0"
+            />
+            <div className="flex flex-col text-left">
+              <span className="font-extrabold text-slate-800 text-xs">{currentUser.name}</span>
+              <span className="text-[9px] text-slate-500 font-mono font-medium">{currentRole?.name}</span>
             </div>
-          )}
+          </div>
+
+          <button
+            onClick={() => {
+              if (onLogout) onLogout();
+            }}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 rounded font-extrabold text-xs transition-all cursor-pointer shadow-2xs"
+            title="Keluar / Logout"
+          >
+            <LogOut className="h-3.5 w-3.5 text-rose-600" />
+            <span className="hidden sm:inline">Keluar</span>
+          </button>
         </div>
       </div>
     </header>

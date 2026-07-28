@@ -193,6 +193,40 @@ export const supabase = {
         }
       };
     }
+  },
+  auth: {
+    signOut: async (): Promise<{ error: Error | null }> => {
+      try {
+        localStorage.removeItem('supabase.auth.token');
+        sessionStorage.clear();
+        return { error: null };
+      } catch (err: any) {
+        return { error: err };
+      }
+    },
+    getSession: async (): Promise<{ data: { session: any } | null; error: Error | null }> => {
+      const isLoggedIn = localStorage.getItem('ta_is_logged_in') === 'true';
+      if (isLoggedIn) {
+        return { data: { session: { user: { id: localStorage.getItem('ta_current_user_id') || 'u-admin' } } }, error: null };
+      }
+      return { data: { session: null }, error: null };
+    },
+    getUser: async (): Promise<{ data: { user: any } | null; error: Error | null }> => {
+      const isLoggedIn = localStorage.getItem('ta_is_logged_in') === 'true';
+      if (isLoggedIn) {
+        return { data: { user: { id: localStorage.getItem('ta_current_user_id') || 'u-admin' } }, error: null };
+      }
+      return { data: { user: null }, error: null };
+    },
+    onAuthStateChange: (callback: (event: string, session: any) => void) => {
+      return {
+        data: {
+          subscription: {
+            unsubscribe: () => {}
+          }
+        }
+      };
+    }
   }
 };
 

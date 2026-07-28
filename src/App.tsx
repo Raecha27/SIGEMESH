@@ -16,18 +16,64 @@ import RekapAbsensiView from './components/RekapAbsensiView';
 import RekapJurnalView from './components/RekapJurnalView';
 import PengaturanView from './components/PengaturanView';
 import DbGuideView from './components/DbGuideView';
+import LoginView from './components/LoginView';
+import LogoutModal from './components/LogoutModal';
 import { db } from './utils/storage';
 import { ShieldAlert, LayoutDashboard } from 'lucide-react';
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => db.isLoggedIn());
   const [collapsed, setCollapsed] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [refreshKey, setRefreshKey] = useState<number>(0);
+
+  // Logout modal & loading state
+  const [showLogoutModal, setShowLogoutModal] = useState<boolean>(false);
+  const [logoutLoading, setLogoutLoading] = useState<boolean>(false);
+
+  // Prevent browser back navigation to authenticated pages when logged out
+  React.useEffect(() => {
+    if (!isAuthenticated) {
+      window.history.replaceState(null, '', '/');
+      const handlePopState = () => {
+        window.history.pushState(null, '', '/');
+      };
+      window.addEventListener('popstate', handlePopState);
+      return () => window.removeEventListener('popstate', handlePopState);
+    }
+  }, [isAuthenticated]);
+
+  // Handle actual logout action
+  const confirmLogout = () => {
+    setLogoutLoading(true);
+    setTimeout(() => {
+      db.logout();
+      setIsAuthenticated(false);
+      setActiveTab('dashboard');
+      setLogoutLoading(false);
+      setShowLogoutModal(false);
+      window.history.replaceState(null, '', '/');
+    }, 400);
+  };
+
+  const handleLogoutPrompt = () => {
+    setShowLogoutModal(true);
+  };
+
+  // Handle login success
+  const handleLoginSuccess = () => {
+    setIsAuthenticated(true);
+    setRefreshKey(prev => prev + 1);
+  };
 
   // Re-trigger rendering context on user change
   const handleRefresh = () => {
     setRefreshKey(prev => prev + 1);
   };
+
+  if (!isAuthenticated) {
+    return <LoginView onLoginSuccess={handleLoginSuccess} />;
+  }
 
   const renderForbidden = (menuName: string, roleName?: string) => {
     const userRoleName = roleName || (db.isGuru() ? 'Guru / Pengajar' : db.isWaliKelas() ? 'Wali Kelas' : 'Pengguna');
@@ -126,18 +172,27 @@ export default function App() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onRefresh={handleRefresh}
+        onLogout={handleLogoutPrompt}
       />
 
       {/* Primary Layout Engine */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header containing metadata indicators and interactive role switchers */}
-        <Topbar onUserChanged={handleRefresh} activeTab={activeTab} />
+        <Topbar onUserChanged={handleRefresh} onLogout={handleLogoutPrompt} activeTab={activeTab} />
 
         {/* Centered Main viewport constrained on fluid desktop limits */}
         <main className="flex-1 p-6 overflow-y-auto max-w-[1400px] w-full mx-auto space-y-6">
           {renderActiveView()}
         </main>
       </div>
+
+      {/* Logout Confirmation Modal */}
+      <LogoutModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={confirmLogout}
+        loading={logoutLoading}
+      />
     </div>
   );
 }

@@ -14,7 +14,8 @@ import {
   Database,
   ChevronLeft,
   ChevronRight,
-  ShieldAlert
+  ShieldAlert,
+  LogOut
 } from 'lucide-react';
 import { Permission } from '../types';
 import { db } from '../utils/storage';
@@ -25,6 +26,7 @@ interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   onRefresh: () => void;
+  onLogout?: () => void;
 }
 
 interface MenuItem {
@@ -39,7 +41,8 @@ export default function Sidebar({
   setCollapsed,
   activeTab,
   setActiveTab,
-  onRefresh
+  onRefresh,
+  onLogout
 }: SidebarProps) {
   const settings = db.getSettings();
   const currentUser = db.getCurrentUser();
@@ -162,8 +165,20 @@ export default function Sidebar({
               </div>
             )}
           </div>
+          
+          <button
+            onClick={() => {
+              if (onLogout) onLogout();
+            }}
+            className="w-full flex items-center justify-center gap-2 px-3 py-1.5 mt-3 bg-slate-900 hover:bg-rose-900/40 text-slate-400 hover:text-rose-300 border border-slate-800 hover:border-rose-700/50 rounded-lg text-xs font-semibold transition-all cursor-pointer"
+            title="Keluar dari Aplikasi"
+          >
+            <LogOut className="h-3.5 w-3.5 text-rose-400 flex-shrink-0" />
+            {!collapsed && <span>Keluar / Logout</span>}
+          </button>
+
           {!collapsed && (
-            <div className="mt-2 text-[9px] text-slate-500 font-mono tracking-tighter truncate">
+            <div className="mt-2.5 text-[9px] text-slate-500 font-mono tracking-tighter truncate text-center">
               {settings.namaSekolah} • v1.0.0
             </div>
           )}

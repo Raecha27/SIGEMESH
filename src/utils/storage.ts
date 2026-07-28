@@ -15,6 +15,7 @@ import {
   PengaturanSekolah,
   ActivityLog
 } from '../types';
+import { supabase } from './supabase';
 
 import {
   initialSchoolSettings,
@@ -124,6 +125,21 @@ export const db = {
 
   getCurrentUserId: () => getStored<string>(KEYS.CURRENT_USER_ID, 'u-admin'),
   setCurrentUserId: (id: string) => setStored(KEYS.CURRENT_USER_ID, id),
+  isLoggedIn: () => getStored<boolean>('ta_is_logged_in', true),
+  login: (id: string) => {
+    setStored(KEYS.CURRENT_USER_ID, id);
+    setStored('ta_is_logged_in', true);
+  },
+  logout: () => {
+    try {
+      db.logActivity("Logout", "Pengguna berhasil keluar dari aplikasi.");
+    } catch (e) {
+      // Ignore if log error
+    }
+    setStored('ta_is_logged_in', false);
+    sessionStorage.clear();
+    supabase.auth.signOut().catch(() => {});
+  },
 
   // Log action helper
   logActivity: (aktivitas: string, detail: string) => {
