@@ -60,6 +60,101 @@ export const exportToExcel = (
 };
 
 /**
+ * Downloads the official Excel template for student data import
+ */
+export const downloadStudentTemplate = () => {
+  const headers = [
+    "NIS",
+    "NISN",
+    "Nama",
+    "JK (L/P)",
+    "Tempat Lahir",
+    "Tanggal Lahir (YYYY-MM-DD)",
+    "Alamat",
+    "Nama Ortu",
+    "HP Wali"
+  ];
+  const exampleRow = [
+    "240001",
+    "0056789123",
+    "Ahmad Fauzi",
+    "L",
+    "Wonosobo",
+    "2010-05-12",
+    "Jl. Merdeka No.10",
+    "Budi Santoso",
+    "081234567890"
+  ];
+
+  const worksheetData = [headers, exampleRow];
+  const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+
+  worksheet['!cols'] = [
+    { wch: 12 }, // NIS
+    { wch: 15 }, // NISN
+    { wch: 25 }, // Nama
+    { wch: 10 }, // JK
+    { wch: 18 }, // Tempat Lahir
+    { wch: 22 }, // Tanggal Lahir
+    { wch: 30 }, // Alamat
+    { wch: 22 }, // Nama Ortu
+    { wch: 18 }  // HP Wali
+  ];
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Template Import Siswa');
+  XLSX.writeFile(workbook, 'Template_Import_Data_Siswa.xlsx');
+};
+
+/**
+ * Exports student data specifically matching template columns so it can be re-imported cleanly
+ */
+export const exportStudentsToExcel = (siswas: any[], kelasList: any[]) => {
+  const headers = [
+    "NIS",
+    "NISN",
+    "Nama",
+    "JK (L/P)",
+    "Tempat Lahir",
+    "Tanggal Lahir (YYYY-MM-DD)",
+    "Alamat",
+    "Nama Ortu",
+    "HP Wali",
+    "Kelas",
+    "Status"
+  ];
+
+  const exportData = siswas.map(s => {
+    const className = kelasList.find(k => k.id === s.kelasId)?.nama || '-';
+    return {
+      "NIS": s.nis,
+      "NISN": s.nisn,
+      "Nama": s.nama,
+      "JK (L/P)": s.jk,
+      "Tempat Lahir": s.tempatLahir || '-',
+      "Tanggal Lahir (YYYY-MM-DD)": s.tanggalLahir || '-',
+      "Alamat": s.alamat || '-',
+      "Nama Ortu": s.orangTua || '-',
+      "HP Wali": s.hpOrangTua || '-',
+      "Kelas": className,
+      "Status": s.status === 'active' ? 'Aktif' : s.status === 'graduated' ? 'Lulus' : 'Mutasi'
+    };
+  });
+
+  const worksheet = XLSX.utils.json_to_sheet(exportData, { header: headers });
+  worksheet['!cols'] = [
+    { wch: 12 }, { wch: 15 }, { wch: 25 }, { wch: 10 },
+    { wch: 18 }, { wch: 22 }, { wch: 30 }, { wch: 22 },
+    { wch: 18 }, { wch: 15 }, { wch: 12 }
+  ];
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Data Siswa');
+  const dateStr = new Date().toISOString().split('T')[0];
+  XLSX.writeFile(workbook, `Data_Siswa_${dateStr}.xlsx`);
+};
+
+/**
  * Generates and downloads a beautifully formatted, branded PDF report.
  * Includes a formal Indonesian Ministry Header, custom styling, and an aligned teacher signature.
  */
